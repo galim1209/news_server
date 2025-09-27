@@ -1,19 +1,18 @@
 package com.example.hello.news.service;
 
-import com.example.hello.news.dto.CategoryDTO;
-import com.example.hello.news.dto.NewsResponse;
-import com.example.hello.news.dto.SourceDTO;
-import com.example.hello.news.dto.SourceResponse;
+import com.example.hello.news.dto.*;
+import com.example.hello.news.entity.Article;
 import com.example.hello.news.entity.Category;
 import com.example.hello.news.entity.Source;
+import com.example.hello.news.repository.ArticleRepository;
 import com.example.hello.news.repository.CategoryRepository;
 import com.example.hello.news.repository.SourceRepository;
 import com.google.gson.Gson;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,6 +22,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +30,7 @@ public class NewsService {
     @Value("${newsapi.source_url}")
     private  String sourceURL;
 
-    @Value("${newsapi.article_url")
+    @Value("${newsapi.article_url}")
     private String articleURL;
 
     @Value("${newsapi.apikey}")
@@ -39,6 +39,7 @@ public class NewsService {
 
     private final CategoryRepository categoryRepository;
     private final SourceRepository sourceRepository;
+    private final ArticleRepository articleRepository;
     // final로 대입하는것을 막을 수 있음 아래 주석보다 조금 더 안전하게 사용가능
 
 //    @Autowired
@@ -162,7 +163,8 @@ public class NewsService {
         return sources.stream().map(Source::toDTO).toList();
     }
 
-    public void inputArticles(String category) throws URISyntaxException, IOException, InterruptedException {
+    @Transactional
+    public void inputArticles(String category) throws URISyntaxException, IOException, InterruptedException, RuntimeException {
         String url = String.format("%scategory=%s&%s", articleURL, category,apikey);
         // https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=6707dc6dd558419baee3d46338464c51
         System.out.println(url);
@@ -183,6 +185,39 @@ public class NewsService {
         NewsResponse newsResponse =  gson.fromJson(resBody, NewsResponse.class);
         System.out.println(newsResponse.getStatus());
         System.out.println(newsResponse.getTotalResults());
+        System.out.println(newsResponse.getArticles()[0].getAuthor());
 
+        saveArticles(newsResponse, category);
+    }
+
+    public void saveArticles(NewsResponse newsResponse, String category) {
+        // CTRL + ALT ( 한번에 try 묶기 단축키)
+        try {
+            for (ArticleDTO article : newsResponse.getArticles()){
+
+                // 이미 기존에 입력되어 있는 source가 있다면 DB에서 찾아서 인스턴스를 만들고
+                Optional<Source> srcOpt = sourceRepository.findByName(article.getSource().getName());
+                // 없으면 새로 생성(srcOpt안에 인스턴스의 값이 null임)
+                Source src = srcOpt.orElseGet( () -> {  // 있으면 get
+                    Source s1 = new Source();
+                    s1.setName(article.getSource().getName());
+                    return sourceRepository.save(s1);
+                });
+
+                 Optional<Category> catOpt = categoryRepository.findByName(category);
+                 Category cat = catOpt.orElseGet(()-> {
+                    Category c = new Category();
+                    c.setName(category);
+                    return categoryRepository.save(c);
+                 });
+
+
+                Article article1 = Article.fromDTO(article, src , cat);
+                articleRepository.save(article1);
+
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
