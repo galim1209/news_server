@@ -22,10 +22,10 @@ public class Source {
     private Long id;    // Auto Increment, 자동 입력
 
     // 만들어둔 컬럼 그대로 설정 ( not null, unique, varchar )
-    @Column( length = 30)
+    @Column( length = 100)
     private  String sid;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, unique = true, length = 100)
     private  String name;
 
     @Column( length = 500)
