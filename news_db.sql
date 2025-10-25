@@ -93,3 +93,55 @@ select * from category;
 select * from source;
 select * from article;
 
+-- 입력: insert int
+-- insert into 테이블명(컬럼명1, 컬럼명2, ...) values (데이터1, 데이터2, ...)[(데이터1, 데이터2, ...)]; / []:  굳이 안 써도 됨
+insert into `category` (`name`,`memo`) values 
+('business', '경제뉴스'), 
+('entertainment', '연예뉴스'), 
+('sports', '스포츠'), 
+('health', '생활/건강'), 
+('technology', '기술'), 
+('science', '기초과학'), 
+('general', '뉴스일반'); 
+
+-- 조회 select 
+/*
+select 컬럼명1,컬럼명2, ... [*(모든 컬럼)]
+from 테이블명
+[where 조건절] -- filtering
+[join 조인조건] -- 다른 테이블과 조인하여 데이터를 조회 
+[group by 그룹 조건] -- 컬럼별 통계 조회시
+[order by 컬럼명1, 컬럼명2, ...[ desc]] -- 컬럼별 정렬하기
+*/
+
+select `name`,`memo`
+from `category`
+where `name` like '%en%';	-- name 필드에 'en'이라는 글자가 포함된 row(행, 레코드)를 필터링한다(찾는다).
+
+-- 데이터 삭제 
+-- delete from
+delete from `category`
+where `name`='general'; 
+
+-- 수정 
+/* 
+update `테이블명` set 컬럼명 = '변경할 값'
+where 조건절; 
+*/ 
+-- category 테이블에서 name 컬럼의 값이 science인 행의 memo 컬럼의 값을 '과학'으로 수정함
+update `category`
+set 
+`name` = 'science',
+`memo` = '기초과학'
+where `id` = '6';
+
+select * from category;
+
+select * from `source`;
+
+-- desc 테이블명 : 해당 테이블에 대한 정보를 보여준다
+desc `source`;
+
+
+
+
